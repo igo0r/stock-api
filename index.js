@@ -36,12 +36,22 @@ app.post("/stocks", async (req, res) => {
         let request = await axios.get(
             `https://finance.yahoo.com/quote/${stock}/`
         );
-        let price = request.data
+        let currentPrice = request.data
             .split(`"${stock}":{"sourceInterval"`)[1]
             .split('regularMarketPrice')[1]
             .split('fmt":"')[1]
             .split('"')[0];
-        return {[stock]: price}
+        let previousClosePrice = request.data
+            .split(`"${stock}":{"sourceInterval"`)[1]
+            .split('regularMarketPreviousClose')[1]
+            .split('fmt":"')[1]
+            .split('"')[0];
+        let openPrice = request.data
+            .split(`"${stock}":{"sourceInterval"`)[1]
+            .split('regularMarketOpen')[1]
+            .split('fmt":"')[1]
+            .split('"')[0];
+        return {[stock]: {current: currentPrice, close: previousClosePrice, open: openPrice}}
     });
 
     Promise.all(stocksPromises)
