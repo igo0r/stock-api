@@ -70,6 +70,43 @@ app.post("/stocks", async (req, res) => {
         });
 });
 
+app.post("/stocks-marketwatch", async (req, res) => {
+    let body = JSON.parse(JSON.stringify(req.body));
+    let stocksPromises = await body.stocks.map(async stock => {
+        console.log(stock);
+        let request = await axios.get(
+            `https://www.marketwatch.com/investing/stock/${stock}`
+        );
+        let currentPrice = request.data
+            .split('<sup class="character">$</sup>')[1]
+            .split('</bg-quote>')[0]
+            .split('>')[1];
+        let openPrice = request.data
+            .split('<small class="label">Open</small>')[1]
+            .split('</span>')[0]
+            .split('$')[1];
+        let previousClosePrice = request.data
+            .split('<td class="table__cell u-semi">$')[1]
+            .split('</td>')[0];
+        return {[stock]: {current: currentPrice, close: previousClosePrice, open: openPrice}}
+    });
+
+    Promise.all(stocksPromises)
+        .then(values => {
+            let response = {};
+            for (let value of values) {
+                let stockName = Object.keys(value)[0];
+                response[stockName] = value[stockName];
+            }
+            console.log("stocks-api.js 40 | values", response);
+            res.json({data: response, status: "done"});
+        })
+        .catch(error => {
+            console.log("stocks-api.js 47 | error", error);
+            res.json({error: error});
+        });
+});
+
 app.listen(process.env.PORT || 8080, () => {
     console.log("index.js 6 | server started...");
 });
