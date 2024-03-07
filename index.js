@@ -74,20 +74,16 @@ app.post("/stocks-marketwatch", async (req, res) => {
     let body = JSON.parse(JSON.stringify(req.body));
     let stocksPromises = await body.stocks.map(async stock => {
         console.log(stock);
-        let request = await axios.get(
-            `https://www.marketwatch.com/investing/stock/${stock}`
-        );
-        let currentPrice = request.data
-            .split('<sup class="character">$</sup>')[1]
-            .split('</bg-quote>')[0]
-            .split('>')[1];
-        let openPrice = request.data
-            .split('<small class="label">Open</small>')[1]
-            .split('</span>')[0]
-            .split('$')[1];
-        let previousClosePrice = request.data
-            .split('<td class="table__cell u-semi">$')[1]
-            .split('</td>')[0];
+        let request = await axios.get('https://www.alphavantage.co/query', {
+            params: {
+                function: 'GLOBAL_QUOTE',
+                symbol: stock,
+                apikey: '15VNYVIVB5LQX9E6',
+            },
+        });
+        let currentPrice = request.data['Global Quote']['05. price'];
+        let openPrice = request.data['Global Quote']['02. open'];
+        let previousClosePrice = request.data['Global Quote']['08. previous close'];
         return {[stock]: {current: currentPrice, close: previousClosePrice, open: openPrice}}
     });
 
