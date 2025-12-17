@@ -72,35 +72,28 @@ app.post("/stocks", async (req, res) => {
 
 app.post("/stocks-marketwatch", async (req, res) => {
     let body = JSON.parse(JSON.stringify(req.body));
-    let stocksPromises = await body.stocks.map(async stock => {
-        console.log(stock);
-        let request = await axios.get('https://www.alphavantage.co/query', {
-            params: {
-                function: 'GLOBAL_QUOTE',
-                symbol: stock,
+    let response = {};
+    try {
+        for (let stock of body.stocks) {
+            console.log(stock);
+            let request = await axios.get('https://www.alphavantage.co/query', {
+                params: {
+                    function: 'GLOBAL_QUOTE',
+                    symbol: stock,
                 apikey: '15VNYVIVB5LQX9E6',
-            },
-        });
-        let currentPrice = request.data['Global Quote']['05. price'];
-        let openPrice = request.data['Global Quote']['02. open'];
-        let previousClosePrice = request.data['Global Quote']['08. previous close'];
-        return {[stock]: {current: currentPrice, close: previousClosePrice, open: openPrice}}
-    });
-
-    Promise.all(stocksPromises)
-        .then(values => {
-            let response = {};
-            for (let value of values) {
-                let stockName = Object.keys(value)[0];
-                response[stockName] = value[stockName];
-            }
-            console.log("stocks-api.js 40 | values", response);
-            res.json({data: response, status: "done"});
-        })
-        .catch(error => {
-            console.log("stocks-api.js 47 | error", error);
-            res.json({error: error});
-        });
+                },
+            });
+            let currentPrice = request.data['Global Quote']['05. price'];
+            let openPrice = request.data['Global Quote']['02. open'];
+            let previousClosePrice = request.data['Global Quote']['08. previous close'];
+            response[stock] = {current: currentPrice, close: previousClosePrice, open: openPrice};
+            await new Promise(r => setTimeout(r, 1000)); // 1 second delay
+        }
+        res.json({data: response, status: "done"});
+    } catch (error) {
+        console.log("error", error);
+        res.json({error: error});
+    }
 });
 
 app.listen(process.env.PORT || 8080, () => {
